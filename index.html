@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="apple-touch-icon" href="image_41.png">
+    <link rel="icon" href="image_41.png">
+    <title>Mark It - Fridge Combo</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --container-bg: #fff;
+            --main: #333;
+            --accent: #eee;
+            --input-bg: #fafafa;
+            --radius: 15px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--container-bg);
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        header { text-align: center; margin-bottom: 5px; }
+        h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+        .description { font-size: 13px; opacity: 0.7; margin-top: 5px; line-height: 1.4; }
+
+        /* Signature Input */
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            background-color: var(--input-bg);
+            font-size: 16px;
+            color: var(--main);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            width: 100%;
+            height: 180px;
+            border: 2px dashed var(--accent);
+            border-radius: var(--radius);
+            background-color: var(--input-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--main);
+            background-color: #f0f0f0;
+        }
+        .drop-zone-text {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.5;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* Hidden File Input */
+        #file-input { display: none; }
+
+        /* Preview Area */
+        .preview-area {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .preview-area.show { display: flex; }
+
+        #preview-canvas {
+            max-width: 100%;
+            border-radius: var(--radius);
+            border: 1px solid var(--accent);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 18px;
+            background-color: var(--main);
+            color: var(--container-bg);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        .support-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 25px;
+            border-top: 1px solid var(--accent);
+            padding-top: 20px;
+        }
+
+        .kofi-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--main);
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 22px;
+            border-radius: var(--radius);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 40px 0 20px;
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.8;
+            opacity: 0.5;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Mark It</h1>
+        <div class="description">One-tap Watermark Inserter.</div>
+    </header>
+
+    <input type="text" id="signature-input" placeholder="Your signature (e.g., afrorakda © 2026)">
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-zone-text">Drop image or Tap to select</div>
+    </div>
+    <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
+
+    <div class="preview-area" id="preview-area">
+        <canvas id="preview-canvas"></canvas>
+        <button class="action-btn" onclick="downloadImage()">DOWNLOAD</button>
+    </div>
+
+    <div class="support-area">
+        <a href="https://ko-fi.com/afrorakda" class="kofi-btn">☕️ buy me a coffee</a>
+    </div>
+</div>
+
+<footer>
+    No login / No tracking / No ads / Browser only<br>
+    Privacy Policy / afrorakda © 2026
+</footer>
+
+<script>
+    const signatureInput = document.getElementById('signature-input');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const previewArea = document.getElementById('preview-area');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const ctx = previewCanvas.getContext('2d');
+
+    // Load saved signature
+    const savedSignature = localStorage.getItem('markItSignature');
+    if (savedSignature) {
+        signatureInput.value = savedSignature;
+    } else {
+        // Default example
+        signatureInput.value = 'afrorakda © 2026';
+    }
+
+    // Save signature on change
+    signatureInput.addEventListener('input', () => {
+        localStorage.setItem('markItSignature', signatureInput.value);
+        // If image is already loaded, re-process it
+        if(currentImage) processImage(currentImage);
+    });
+
+    // Drag and Drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+    });
+
+    // File input handler
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        handleFile(file);
+    });
+
+    let currentImage = null;
+
+    function handleFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                processImage(img);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function processImage(img) {
+        const text = signatureInput.value;
+        const width = img.width;
+        const height = img.height;
+
+        // Set canvas size to match image
+        previewCanvas.width = width;
+        previewCanvas.height = height;
+
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+
+        // --- Watermark Logic (Fridge Combo Core) ---
+        // 1. Font Setting: OS standard bold, dynamic size based on image width
+        const fontSize = Math.max(20, Math.round(width / 35)); // Minimum 20px
+        ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        ctx.textBaseline = 'bottom';
+        ctx.textAlign = 'right';
+
+        // 2. Padding and Position (Right-Bottom fixed)
+        const padding = fontSize;
+        const posX = width - padding;
+        const posY = height - padding;
+
+        // 3. Visibility Logic (White Semitransparent + Black Shadow)
+        // Draw black shadow for dark backgrounds
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Semitransparent black shadow
+        ctx.fillText(text, posX + 2, posY + 2); // Slightly offset
+
+        // Draw white main text for visibility
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Semitransparent white
+        ctx.fillText(text, posX, posY);
+
+        // --- End Watermark Logic ---
+
+        // Show Preview Area
+        previewArea.classList.add('show');
+        // Smooth scroll to preview
+        previewArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function downloadImage() {
+        const text = signatureInput.value || 'marked';
+        const cleanText = text.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const filename = `marked_${cleanText}_${Date.now()}.jpg`;
+        
+        const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.9);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.src = dataUrl;
+        link.href = dataUrl;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
