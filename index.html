@@ -10,10 +10,10 @@
         :root {
             --bg: #f5f5f5;
             --container-bg: #fff;
-            --main: #333; /* ボタンの黒（控えめ） */
+            --main: #333;
             --accent: #eee;
             --input-bg: #fafafa;
-            --ghost: #888; /* 薄いグレー（プレースホルダーなど） */
+            --ghost: #aaa;
             --radius: 15px;
         }
 
@@ -35,7 +35,7 @@
             width: 100%;
             max-width: 400px;
             background-color: var(--container-bg);
-            padding: 30px 15px 35px; /* 下にたっぷりと余白 */
+            padding: 30px 15px 35px;
             border-radius: var(--radius);
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             display: flex;
@@ -47,24 +47,40 @@
         h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
         .description { font-size: 13px; opacity: 0.6; margin-top: 5px; }
 
-        /* Signature Input (透かしのように薄く) */
+        .input-wrapper {
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
         input[type="text"] {
             width: 100%;
-            padding: 15px;
+            padding: 15px 50px 15px 15px;
             border: 2px solid var(--accent);
             border-radius: var(--radius);
             background-color: var(--input-bg);
             font-size: 16px;
             font-weight: 600;
-            color: var(--ghost); /* 薄いグレー */
+            color: #555;
             outline: none;
             -webkit-appearance: none;
-            transition: 0.2s;
         }
         input[type="text"]::placeholder { color: #ccc; }
-        input[type="text"]:focus { border-color: var(--ghost); color: var(--main); }
 
-        /* Interaction Area (Switchable) */
+        .clr-btn {
+            position: absolute;
+            right: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--ghost);
+            background: rgba(0,0,0,0.03);
+            border: none;
+            border-radius: 8px;
+            padding: 4px 8px;
+            cursor: pointer;
+            display: none;
+        }
+
         .interaction-box {
             width: 100%;
             min-height: 200px;
@@ -84,17 +100,15 @@
         .drop-text { font-size: 14px; font-weight: 700; opacity: 0.4; text-align: center; }
 
         #preview-canvas { max-width: 100%; height: auto; display: none; }
-
         #file-input { display: none; }
 
-        /* Action Buttons */
         .btn-stack { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
         .btn-stack.show { display: flex; }
 
         .action-btn {
             width: 100%;
             padding: 18px;
-            background-color: var(--main); /* 控えめな黒 */
+            background-color: var(--main);
             color: #fff;
             border: none;
             border-radius: var(--radius);
@@ -106,21 +120,20 @@
 
         .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
 
-        /* Support area (Re-designed with Boxes and Margins) */
         .support-area {
             margin-top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 25px; /* 十分な距離 */
+            gap: 25px;
             border-top: 1px solid var(--accent);
             padding-top: 30px;
         }
 
         .foot-btn {
-            width: 80%; /* 少し短く */
+            width: 80%;
             padding: 12px;
-            background-color: var(--main); /* 控えめな黒 */
+            background-color: var(--main);
             color: #fff;
             border: none;
             border-radius: var(--radius);
@@ -143,7 +156,6 @@
             opacity: 0.5;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -175,7 +187,10 @@
         <div class="description">One-tap Watermark Inserter.</div>
     </header>
 
-    <input type="text" id="signature-input" placeholder="Your signature">
+    <div class="input-wrapper">
+        <input type="text" id="signature-input" placeholder="Your signature (e.g., afrorakda © 2026)">
+        <button id="clr-btn" class="clr-btn">clr</button>
+    </div>
 
     <div class="interaction-box" id="interaction-box" onclick="document.getElementById('file-input').click()">
         <div id="drop-zone">
@@ -214,6 +229,7 @@
 
 <script>
     const signatureInput = document.getElementById('signature-input');
+    const clrBtn = document.getElementById('clr-btn');
     const dropZone = document.getElementById('drop-zone');
     const interactionBox = document.getElementById('interaction-box');
     const fileInput = document.getElementById('file-input');
@@ -221,12 +237,24 @@
     const previewCanvas = document.getElementById('preview-canvas');
     const ctx = previewCanvas.getContext('2d');
 
-    // Load saved signature
     const saved = localStorage.getItem('markItSignature');
-    signatureInput.value = saved || 'afrorakda © 2026';
+    if (saved) {
+        signatureInput.value = saved;
+        clrBtn.style.display = 'block';
+    }
 
     signatureInput.addEventListener('input', () => {
-        localStorage.setItem('markItSignature', signatureInput.value);
+        const text = signatureInput.value;
+        localStorage.setItem('markItSignature', text);
+        clrBtn.style.display = text ? 'block' : 'none';
+        if(currentImage) processImage(currentImage);
+    });
+
+    clrBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // クリック時にファイル選択が開かないように
+        signatureInput.value = '';
+        localStorage.removeItem('markItSignature');
+        clrBtn.style.display = 'none';
         if(currentImage) processImage(currentImage);
     });
 
@@ -259,6 +287,11 @@
         previewCanvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
+        if (!text) {
+            updatePreviewUI();
+            return;
+        }
+
         const fontSize = Math.max(20, Math.round(img.width / 35));
         ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.textBaseline = 'bottom';
@@ -268,11 +301,26 @@
         const x = img.width - padding;
         const y = img.height - padding;
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillText(text, x + 2, y + 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillText(text, x, y);
+        // --- 視認性強化ロジック ---
+        // 黒い影をよりハッキリ（少し太く）
+        ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+        ctx.shadowBlur = fontSize / 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
 
+        // 文字色を不透明な白に
+        ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+        ctx.fillText(text, x, y);
+        
+        // 影設定をリセット（画像に影響を与えないよう）
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+
+        updatePreviewUI();
+    }
+
+    function updatePreviewUI() {
         dropZone.style.display = 'none';
         previewCanvas.style.display = 'block';
         btnStack.classList.add('show');
@@ -280,7 +328,7 @@
     }
 
     function downloadImage() {
-        const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.95);
         const link = document.createElement('a');
         link.download = `marked_${Date.now()}.jpg`;
         link.href = dataUrl;
