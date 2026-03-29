@@ -10,9 +10,10 @@
         :root {
             --bg: #f5f5f5;
             --container-bg: #fff;
-            --main: #333;
+            --main: #333; /* ボタンの黒（控えめ） */
             --accent: #eee;
             --input-bg: #fafafa;
+            --ghost: #888; /* 薄いグレー（プレースホルダーなど） */
             --radius: 15px;
         }
 
@@ -34,19 +35,19 @@
             width: 100%;
             max-width: 400px;
             background-color: var(--container-bg);
-            padding: 25px;
+            padding: 30px 15px 35px; /* 下にたっぷりと余白 */
             border-radius: var(--radius);
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         header { text-align: center; margin-bottom: 5px; }
         h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
         .description { font-size: 13px; opacity: 0.6; margin-top: 5px; }
 
-        /* Signature Input */
+        /* Signature Input (透かしのように薄く) */
         input[type="text"] {
             width: 100%;
             padding: 15px;
@@ -54,13 +55,14 @@
             border-radius: var(--radius);
             background-color: var(--input-bg);
             font-size: 16px;
-            font-weight: 700;
-            color: var(--main);
+            font-weight: 600;
+            color: var(--ghost); /* 薄いグレー */
             outline: none;
             -webkit-appearance: none;
-            -webkit-text-fill-color: var(--main);
-            opacity: 1 !important;
+            transition: 0.2s;
         }
+        input[type="text"]::placeholder { color: #ccc; }
+        input[type="text"]:focus { border-color: var(--ghost); color: var(--main); }
 
         /* Interaction Area (Switchable) */
         .interaction-box {
@@ -92,7 +94,7 @@
         .action-btn {
             width: 100%;
             padding: 18px;
-            background-color: var(--main);
+            background-color: var(--main); /* 控えめな黒 */
             color: #fff;
             border: none;
             border-radius: var(--radius);
@@ -104,24 +106,33 @@
 
         .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
 
-        /* Support area */
+        /* Support area (Re-designed with Boxes and Margins) */
         .support-area {
             margin-top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 25px; /* 十分な距離 */
             border-top: 1px solid var(--accent);
-            padding-top: 25px;
+            padding-top: 30px;
         }
 
-        .foot-link {
-            text-decoration: none;
-            color: #aaa;
-            font-weight: 700;
+        .foot-btn {
+            width: 80%; /* 少し短く */
+            padding: 12px;
+            background-color: var(--main); /* 控えめな黒 */
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
             font-size: 13px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
             cursor: pointer;
+            opacity: 0.9;
+            transition: 0.1s;
         }
+        .foot-btn:active { transform: scale(0.98); opacity: 1; }
 
         footer {
             margin-top: auto;
@@ -177,13 +188,13 @@
     <div class="btn-stack" id="btn-stack">
         <button class="action-btn" onclick="downloadImage()">DOWNLOAD</button>
         <div class="save-guide">
-            *Downloads to "Files" app on iOS.<br>Tap "View" or "Download" in the pop-up.
+            *On iOS, downloads to "Files" app.<br>On Android/PC, saved to "Downloads" folder.
         </div>
     </div>
 
     <div class="support-area">
-        <a href="https://ko-fi.com/afrorakda" target="_blank" class="foot-link">☕️ buy me a coffee</a>
-        <div class="foot-link" onclick="showModal()">📱 Add to Home Screen</div>
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="foot-btn">☕️ buy me a coffee</a>
+        <div class="foot-btn" onclick="showModal()">📱 Add to Home Screen</div>
     </div>
 </div>
 
