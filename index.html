@@ -44,7 +44,7 @@
 
         header { text-align: center; margin-bottom: 5px; }
         h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
-        .description { font-size: 13px; opacity: 0.7; margin-top: 5px; line-height: 1.4; }
+        .description { font-size: 13px; opacity: 0.6; margin-top: 5px; }
 
         /* Signature Input */
         input[type="text"] {
@@ -54,15 +54,18 @@
             border-radius: var(--radius);
             background-color: var(--input-bg);
             font-size: 16px;
+            font-weight: 700;
             color: var(--main);
             outline: none;
             -webkit-appearance: none;
+            -webkit-text-fill-color: var(--main);
+            opacity: 1 !important;
         }
 
-        /* Drop Zone */
-        .drop-zone {
+        /* Interaction Area (Switchable) */
+        .interaction-box {
             width: 100%;
-            height: 180px;
+            min-height: 200px;
             border: 2px dashed var(--accent);
             border-radius: var(--radius);
             background-color: var(--input-bg);
@@ -71,79 +74,53 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: 0.2s;
-            position: relative;
             overflow: hidden;
-        }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--main);
-            background-color: #f0f0f0;
-        }
-        .drop-zone-text {
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0.5;
-            text-align: center;
-            pointer-events: none;
+            position: relative;
         }
 
-        /* Hidden File Input */
+        #drop-zone { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; }
+        .drop-text { font-size: 14px; font-weight: 700; opacity: 0.4; text-align: center; }
+
+        #preview-canvas { max-width: 100%; height: auto; display: none; }
+
         #file-input { display: none; }
 
-        /* Preview Area */
-        .preview-area {
-            width: 100%;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .preview-area.show { display: flex; }
-
-        #preview-canvas {
-            max-width: 100%;
-            border-radius: var(--radius);
-            border: 1px solid var(--accent);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
         /* Action Buttons */
+        .btn-stack { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .btn-stack.show { display: flex; }
+
         .action-btn {
             width: 100%;
             padding: 18px;
             background-color: var(--main);
-            color: var(--container-bg);
+            color: #fff;
             border: none;
             border-radius: var(--radius);
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
-            transition: 0.1s;
         }
         .action-btn:active { transform: scale(0.98); }
 
+        .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
+
+        /* Support area */
         .support-area {
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            margin-top: 25px;
+            gap: 15px;
             border-top: 1px solid var(--accent);
-            padding-top: 20px;
+            padding-top: 25px;
         }
 
-        .kofi-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--main);
-            color: #fff;
+        .foot-link {
             text-decoration: none;
-            padding: 12px 22px;
-            border-radius: var(--radius);
-            font-weight: bold;
-            font-size: 14px;
+            color: #aaa;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
         }
 
         footer {
@@ -155,6 +132,28 @@
             opacity: 0.5;
         }
 
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            max-width: 340px;
+            width: 90%;
+            position: relative;
+        }
+        .modal-close { position: absolute; top: 15px; right: 15px; color: #ccc; font-size: 22px; cursor: pointer; }
+        .modal-title { font-weight: bold; font-size: 20px; margin-bottom: 20px; }
+        .modal-item { margin-bottom: 15px; font-size: 14px; line-height: 1.5; }
+        .modal-item b { display: block; margin-bottom: 3px; color: var(--main); }
+
     </style>
 </head>
 <body>
@@ -165,20 +164,26 @@
         <div class="description">One-tap Watermark Inserter.</div>
     </header>
 
-    <input type="text" id="signature-input" placeholder="Your signature (e.g., afrorakda © 2026)">
+    <input type="text" id="signature-input" placeholder="Your signature">
 
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-        <div class="drop-zone-text">Drop image or Tap to select</div>
+    <div class="interaction-box" id="interaction-box" onclick="document.getElementById('file-input').click()">
+        <div id="drop-zone">
+            <div class="drop-text">Drop image or Tap to select</div>
+        </div>
+        <canvas id="preview-canvas"></canvas>
     </div>
     <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
 
-    <div class="preview-area" id="preview-area">
-        <canvas id="preview-canvas"></canvas>
+    <div class="btn-stack" id="btn-stack">
         <button class="action-btn" onclick="downloadImage()">DOWNLOAD</button>
+        <div class="save-guide">
+            *Downloads to "Files" app on iOS.<br>Tap "View" or "Download" in the pop-up.
+        </div>
     </div>
 
     <div class="support-area">
-        <a href="https://ko-fi.com/afrorakda" class="kofi-btn">☕️ buy me a coffee</a>
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="foot-link">☕️ buy me a coffee</a>
+        <div class="foot-link" onclick="showModal()">📱 Add to Home Screen</div>
     </div>
 </div>
 
@@ -187,63 +192,51 @@
     Privacy Policy / afrorakda © 2026
 </footer>
 
+<div id="homeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="closeModal()">×</div>
+        <div class="modal-title">Install</div>
+        <div class="modal-item"><b>🍏 iPhone (Safari):</b> Tap Share, then Add to Home Screen.</div>
+        <div class="modal-item"><b>🤖 Android (Chrome):</b> Tap Menu (⋮), then Add to Home Screen.</div>
+    </div>
+</div>
+
 <script>
     const signatureInput = document.getElementById('signature-input');
     const dropZone = document.getElementById('drop-zone');
+    const interactionBox = document.getElementById('interaction-box');
     const fileInput = document.getElementById('file-input');
-    const previewArea = document.getElementById('preview-area');
+    const btnStack = document.getElementById('btn-stack');
     const previewCanvas = document.getElementById('preview-canvas');
     const ctx = previewCanvas.getContext('2d');
 
     // Load saved signature
-    const savedSignature = localStorage.getItem('markItSignature');
-    if (savedSignature) {
-        signatureInput.value = savedSignature;
-    } else {
-        // Default example
-        signatureInput.value = 'afrorakda © 2026';
-    }
+    const saved = localStorage.getItem('markItSignature');
+    signatureInput.value = saved || 'afrorakda © 2026';
 
-    // Save signature on change
     signatureInput.addEventListener('input', () => {
         localStorage.setItem('markItSignature', signatureInput.value);
-        // If image is already loaded, re-process it
         if(currentImage) processImage(currentImage);
     });
 
-    // Drag and Drop handlers
-    dropZone.addEventListener('dragover', (e) => {
+    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.style.borderColor = '#333'; });
+    interactionBox.addEventListener('dragleave', () => { interactionBox.style.borderColor = '#eee'; });
+    interactionBox.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        handleFile(file);
+        interactionBox.style.borderColor = '#eee';
+        handleFile(e.dataTransfer.files[0]);
     });
 
-    // File input handler
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        handleFile(file);
-    });
+    fileInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); });
 
     let currentImage = null;
 
     function handleFile(file) {
         if (!file || !file.type.startsWith('image/')) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
-            img.onload = () => {
-                currentImage = img;
-                processImage(img);
-            };
+            img.onload = () => { currentImage = img; processImage(img); };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
@@ -251,61 +244,42 @@
 
     function processImage(img) {
         const text = signatureInput.value;
-        const width = img.width;
-        const height = img.height;
-
-        // Set canvas size to match image
-        previewCanvas.width = width;
-        previewCanvas.height = height;
-
-        // Draw original image
+        previewCanvas.width = img.width;
+        previewCanvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        // --- Watermark Logic (Fridge Combo Core) ---
-        // 1. Font Setting: OS standard bold, dynamic size based on image width
-        const fontSize = Math.max(20, Math.round(width / 35)); // Minimum 20px
+        const fontSize = Math.max(20, Math.round(img.width / 35));
         ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.textBaseline = 'bottom';
         ctx.textAlign = 'right';
 
-        // 2. Padding and Position (Right-Bottom fixed)
         const padding = fontSize;
-        const posX = width - padding;
-        const posY = height - padding;
+        const x = img.width - padding;
+        const y = img.height - padding;
 
-        // 3. Visibility Logic (White Semitransparent + Black Shadow)
-        // Draw black shadow for dark backgrounds
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Semitransparent black shadow
-        ctx.fillText(text, posX + 2, posY + 2); // Slightly offset
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillText(text, x + 2, y + 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillText(text, x, y);
 
-        // Draw white main text for visibility
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Semitransparent white
-        ctx.fillText(text, posX, posY);
-
-        // --- End Watermark Logic ---
-
-        // Show Preview Area
-        previewArea.classList.add('show');
-        // Smooth scroll to preview
-        previewArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        dropZone.style.display = 'none';
+        previewCanvas.style.display = 'block';
+        btnStack.classList.add('show');
+        interactionBox.style.borderStyle = 'solid';
     }
 
     function downloadImage() {
-        const text = signatureInput.value || 'marked';
-        const cleanText = text.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        const filename = `marked_${cleanText}_${Date.now()}.jpg`;
-        
         const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.9);
         const link = document.createElement('a');
-        link.download = filename;
-        link.src = dataUrl;
+        link.download = `marked_${Date.now()}.jpg`;
         link.href = dataUrl;
-        
-        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
+
+    function showModal() { document.getElementById('homeModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('homeModal').style.display = 'none'; }
 </script>
 
 </body>
