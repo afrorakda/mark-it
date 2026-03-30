@@ -43,7 +43,6 @@
         h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -1px; }
         .description { font-size: 13px; color: #666; margin-top: 5px; }
 
-        /* 複数行対応の入力エリア */
         .input-wrapper {
             width: 100%;
             position: relative;
@@ -61,7 +60,6 @@
             color: var(--main) !important;
             outline: none;
             resize: none;
-            /* iOS対策 */
             -webkit-appearance: none;
             -webkit-text-fill-color: var(--main) !important;
             opacity: 1 !important;
@@ -118,10 +116,20 @@
         .action-btn.show { display: block; }
         .action-btn:active { transform: scale(0.98); }
 
+        /* 保存先案内の復元 */
+        .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
+
+        .footer-btns { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 30px; }
         .kofi-btn {
             display: inline-block; background: var(--main); color: #fff;
             padding: 12px 25px; border-radius: var(--radius);
-            text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 30px;
+            text-decoration: none; font-weight: bold; font-size: 14px;
+        }
+        /* Add to Home Screenボタンの復元 */
+        .home-btn {
+            display: block; width: 60%; margin: 0 auto; background: var(--accent);
+            color: var(--main); border: none; padding: 10px;
+            border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
         }
 
         footer {
@@ -132,9 +140,16 @@
             line-height: 1.8;
         }
 
-        /* モーダル略 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
-        .modal-content { background: #fff; padding: 30px; border-radius: var(--radius); max-width: 340px; width: 90%; position: relative; text-align: left; }
+        /* モーダルの復元 */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-content {
+            background: #fff; width: 85%; max-width: 320px; padding: 30px;
+            border-radius: var(--radius); text-align: left; position: relative;
+        }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -142,7 +157,7 @@
 <div class="container">
     <header>
         <h1>Mark It</h1>
-        <div class="description">Watermark Inserter (Multi-line)</div>
+        <div class="description">One-tap Multi-line Watermark Inserter.</div>
     </header>
 
     <div class="input-wrapper">
@@ -156,12 +171,17 @@
         </div>
         <canvas id="preview-canvas"></canvas>
     </div>
-    <input type="file" id="file-input" accept="image/*">
+    <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
 
     <button class="action-btn" id="download-btn" onclick="downloadImage()">DOWNLOAD</button>
+    
+    <div class="save-guide">
+        *On iOS, downloads to "Files" app.<br>On Android/PC, saved to "Downloads" folder.
+    </div>
 
-    <div style="text-align:center;">
-        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
+    <div class="footer-btns">
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕ buy me a coffee</a>
+        <button class="home-btn" onclick="showModal()">Add to Home Screen</button>
     </div>
 </div>
 
@@ -169,6 +189,16 @@
     No login / No tracking / No ads / Browser only<br>
     Privacy Policy / afrorakda © 2026
 </footer>
+
+<div id="modal" onclick="hideModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-x" onclick="hideModal()">×</span>
+        <h3>📱 Install</h3>
+        <p>Add to your home screen.</p>
+        <p>🍏 <strong>iPhone (Safari):</strong><br>Tap Share, then Add to Home Screen.</p>
+        <p>🤖 <strong>Android (Chrome):</strong><br>Tap Menu (⋮), then Add to Home Screen.</p>
+    </div>
+</div>
 
 <script>
     const signatureInput = document.getElementById('signature-input');
@@ -201,6 +231,14 @@
         localStorage.removeItem('markItSignature');
         clrBtn.style.display = 'none';
         if(currentImage) processImage(currentImage);
+    });
+
+    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.style.borderColor = '#333'; });
+    interactionBox.addEventListener('dragleave', () => { interactionBox.style.borderColor = '#eee'; });
+    interactionBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        interactionBox.style.borderColor = '#eee';
+        handleFile(e.dataTransfer.files[0]);
     });
 
     fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -237,7 +275,7 @@
         const padding = fontSize;
         const lineHeight = fontSize * 1.2;
 
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 1.0)';
         ctx.shadowBlur = fontSize / 4;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
@@ -267,6 +305,10 @@
         link.href = dataUrl;
         link.click();
     }
+
+    // モーダル操作の復元
+    function showModal() { document.getElementById('modal').style.display = 'flex'; }
+    function hideModal() { document.getElementById('modal').style.display = 'none'; }
 </script>
 
 </body>
