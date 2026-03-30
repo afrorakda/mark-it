@@ -8,8 +8,7 @@
     <title>Mark It - Fridge Combo</title>
     <style>
         :root {
-            --bg: #f5f5f5;
-            --container-bg: #fff;
+            --bg: #fff; /* 憲法に基づき#fff */
             --main: #333;
             --accent: #eee;
             --input-bg: #fafafa;
@@ -20,7 +19,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
             color: var(--main);
             margin: 0;
@@ -34,46 +33,49 @@
         .container {
             width: 100%;
             max-width: 400px;
-            background-color: var(--container-bg);
-            padding: 30px 15px 35px;
-            border-radius: var(--radius);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            padding: 20px 0;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
-        header { text-align: center; margin-bottom: 5px; }
-        h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
-        .description { font-size: 13px; opacity: 0.6; margin-top: 5px; }
+        header { text-align: center; }
+        h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -1px; }
+        .description { font-size: 13px; color: #666; margin-top: 5px; }
 
+        /* 複数行対応の入力エリア */
         .input-wrapper {
             width: 100%;
             position: relative;
-            display: flex;
-            align-items: center;
         }
-        input[type="text"] {
+        textarea {
             width: 100%;
-            padding: 15px 50px 15px 15px;
+            height: 80px;
+            padding: 15px;
+            padding-right: 50px;
             border: 2px solid var(--accent);
             border-radius: var(--radius);
             background-color: var(--input-bg);
             font-size: 16px;
-            font-weight: 600;
-            color: #555;
+            font-weight: 700;
+            color: var(--main) !important;
             outline: none;
+            resize: none;
+            /* iOS対策 */
             -webkit-appearance: none;
+            -webkit-text-fill-color: var(--main) !important;
+            opacity: 1 !important;
         }
-        input[type="text"]::placeholder { color: #ccc; }
+        textarea::placeholder { color: #ccc; -webkit-text-fill-color: #ccc; }
 
         .clr-btn {
             position: absolute;
             right: 15px;
+            top: 15px;
             font-size: 11px;
             font-weight: bold;
             color: var(--ghost);
-            background: rgba(0,0,0,0.03);
+            background: var(--accent);
             border: none;
             border-radius: 8px;
             padding: 4px 8px;
@@ -83,27 +85,22 @@
 
         .interaction-box {
             width: 100%;
-            min-height: 200px;
+            min-height: 220px;
             border: 2px dashed var(--accent);
             border-radius: var(--radius);
             background-color: var(--input-bg);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             overflow: hidden;
-            position: relative;
         }
 
-        #drop-zone { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; }
-        .drop-text { font-size: 14px; font-weight: 700; opacity: 0.4; text-align: center; }
+        #drop-zone { text-align: center; padding: 20px; }
+        .drop-text { font-size: 14px; font-weight: 700; color: #bbb; }
 
         #preview-canvas { max-width: 100%; height: auto; display: none; }
         #file-input { display: none; }
-
-        .btn-stack { display: none; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .btn-stack.show { display: flex; }
 
         .action-btn {
             width: 100%;
@@ -115,68 +112,29 @@
             font-size: 16px;
             font-weight: 800;
             cursor: pointer;
+            display: none;
+            margin-top: 10px;
         }
+        .action-btn.show { display: block; }
         .action-btn:active { transform: scale(0.98); }
 
-        .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
-
-        .support-area {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
-            border-top: 1px solid var(--accent);
-            padding-top: 30px;
+        .kofi-btn {
+            display: inline-block; background: var(--main); color: #fff;
+            padding: 12px 25px; border-radius: var(--radius);
+            text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 30px;
         }
-
-        .foot-btn {
-            width: 80%;
-            padding: 12px;
-            background-color: var(--main);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 13px;
-            font-weight: bold;
-            text-decoration: none;
-            text-align: center;
-            cursor: pointer;
-            opacity: 0.9;
-            transition: 0.1s;
-        }
-        .foot-btn:active { transform: scale(0.98); opacity: 1; }
 
         footer {
-            margin-top: auto;
-            padding: 40px 0 20px;
+            margin-top: 50px;
             text-align: center;
             font-size: 11px;
+            color: #aaa;
             line-height: 1.8;
-            opacity: 0.5;
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: var(--container-bg);
-            padding: 30px;
-            border-radius: var(--radius);
-            max-width: 340px;
-            width: 90%;
-            position: relative;
-        }
-        .modal-close { position: absolute; top: 15px; right: 15px; color: #ccc; font-size: 22px; cursor: pointer; }
-        .modal-title { font-weight: bold; font-size: 20px; margin-bottom: 20px; }
-        .modal-item { margin-bottom: 15px; font-size: 14px; line-height: 1.5; }
-        .modal-item b { display: block; margin-bottom: 3px; color: var(--main); }
-
+        /* モーダル略 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #fff; padding: 30px; border-radius: var(--radius); max-width: 340px; width: 90%; position: relative; text-align: left; }
     </style>
 </head>
 <body>
@@ -184,11 +142,11 @@
 <div class="container">
     <header>
         <h1>Mark It</h1>
-        <div class="description">One-tap Watermark Inserter.</div>
+        <div class="description">Watermark Inserter (Multi-line)</div>
     </header>
 
     <div class="input-wrapper">
-        <input type="text" id="signature-input" placeholder="Your signature (e.g., afrorakda © 2026)">
+        <textarea id="signature-input" placeholder="Your signature&#10;(Supports multi-line)"></textarea>
         <button id="clr-btn" class="clr-btn">clr</button>
     </div>
 
@@ -198,18 +156,12 @@
         </div>
         <canvas id="preview-canvas"></canvas>
     </div>
-    <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
+    <input type="file" id="file-input" accept="image/*">
 
-    <div class="btn-stack" id="btn-stack">
-        <button class="action-btn" onclick="downloadImage()">DOWNLOAD</button>
-        <div class="save-guide">
-            *On iOS, downloads to "Files" app.<br>On Android/PC, saved to "Downloads" folder.
-        </div>
-    </div>
+    <button class="action-btn" id="download-btn" onclick="downloadImage()">DOWNLOAD</button>
 
-    <div class="support-area">
-        <a href="https://ko-fi.com/afrorakda" target="_blank" class="foot-btn">☕️ buy me a coffee</a>
-        <div class="foot-btn" onclick="showModal()">📱 Add to Home Screen</div>
+    <div style="text-align:center;">
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
     </div>
 </div>
 
@@ -218,25 +170,18 @@
     Privacy Policy / afrorakda © 2026
 </footer>
 
-<div id="homeModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-close" onclick="closeModal()">×</div>
-        <div class="modal-title">Install</div>
-        <div class="modal-item"><b>🍏 iPhone (Safari):</b> Tap Share, then Add to Home Screen.</div>
-        <div class="modal-item"><b>🤖 Android (Chrome):</b> Tap Menu (⋮), then Add to Home Screen.</div>
-    </div>
-</div>
-
 <script>
     const signatureInput = document.getElementById('signature-input');
     const clrBtn = document.getElementById('clr-btn');
-    const dropZone = document.getElementById('drop-zone');
     const interactionBox = document.getElementById('interaction-box');
     const fileInput = document.getElementById('file-input');
-    const btnStack = document.getElementById('btn-stack');
+    const downloadBtn = document.getElementById('download-btn');
     const previewCanvas = document.getElementById('preview-canvas');
     const ctx = previewCanvas.getContext('2d');
 
+    let currentImage = null;
+
+    // Load initial data
     const saved = localStorage.getItem('markItSignature');
     if (saved) {
         signatureInput.value = saved;
@@ -251,24 +196,14 @@
     });
 
     clrBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // クリック時にファイル選択が開かないように
+        e.stopPropagation();
         signatureInput.value = '';
         localStorage.removeItem('markItSignature');
         clrBtn.style.display = 'none';
         if(currentImage) processImage(currentImage);
     });
 
-    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.style.borderColor = '#333'; });
-    interactionBox.addEventListener('dragleave', () => { interactionBox.style.borderColor = '#eee'; });
-    interactionBox.addEventListener('drop', (e) => {
-        e.preventDefault();
-        interactionBox.style.borderColor = '#eee';
-        handleFile(e.dataTransfer.files[0]);
-    });
-
-    fileInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); });
-
-    let currentImage = null;
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
     function handleFile(file) {
         if (!file || !file.type.startsWith('image/')) return;
@@ -288,43 +223,41 @@
         ctx.drawImage(img, 0, 0);
 
         if (!text) {
-            updatePreviewUI();
+            updateUI();
             return;
         }
 
-        const fontSize = Math.max(20, Math.round(img.width / 35));
+        // サイズアップ: width / 25
+        const fontSize = Math.max(24, Math.round(img.width / 25));
         ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         ctx.textBaseline = 'bottom';
         ctx.textAlign = 'right';
 
+        const lines = text.split('\n').reverse(); // 下から順に描画
         const padding = fontSize;
-        const x = img.width - padding;
-        const y = img.height - padding;
+        const lineHeight = fontSize * 1.2;
 
-        // --- 視認性強化ロジック ---
-        // 黒い影をよりハッキリ（少し太く）
-        ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
         ctx.shadowBlur = fontSize / 4;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
-
-        // 文字色を不透明な白に
         ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
-        ctx.fillText(text, x, y);
-        
-        // 影設定をリセット（画像に影響を与えないよう）
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
-        updatePreviewUI();
+        lines.forEach((line, index) => {
+            const y = img.height - padding - (index * lineHeight);
+            ctx.fillText(line, img.width - padding, y);
+        });
+
+        // Reset shadow for canvas purity
+        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+
+        updateUI();
     }
 
-    function updatePreviewUI() {
-        dropZone.style.display = 'none';
+    function updateUI() {
+        document.getElementById('drop-zone').style.display = 'none';
         previewCanvas.style.display = 'block';
-        btnStack.classList.add('show');
-        interactionBox.style.borderStyle = 'solid';
+        downloadBtn.classList.add('show');
     }
 
     function downloadImage() {
@@ -332,13 +265,8 @@
         const link = document.createElement('a');
         link.download = `marked_${Date.now()}.jpg`;
         link.href = dataUrl;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
     }
-
-    function showModal() { document.getElementById('homeModal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('homeModal').style.display = 'none'; }
 </script>
 
 </body>
