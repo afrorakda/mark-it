@@ -15,9 +15,16 @@
             --input-bg: #fafafa;
             --ghost: #bbb;
             --radius: 15px;
+            --success: #2ecc71;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            margin: 0; padding: 0;
+            user-select: none; /* 全体で長押し選択を禁止 */
+            -webkit-user-select: none;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -46,6 +53,8 @@
             background-color: var(--input-bg); font-size: 16px; font-weight: 700;
             color: var(--main) !important; outline: none; resize: none;
             -webkit-appearance: none; -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
+            user-select: text; /* テキスト入力のみ許可 */
+            -webkit-user-select: text;
         }
         textarea::placeholder { color: var(--ghost); -webkit-text-fill-color: var(--ghost); }
 
@@ -60,7 +69,7 @@
             width: 100%; min-height: 220px; border: 2px dashed var(--accent);
             border-radius: var(--radius); background-color: var(--input-bg);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; overflow: hidden; margin-bottom: 15px;
+            cursor: pointer; overflow: hidden; margin-bottom: 20px;
             transition: background 0.3s;
         }
         .interaction-box.dragover { background: #f0f0f0; border-color: var(--main); }
@@ -71,16 +80,23 @@
         #preview-canvas { max-width: 100%; height: auto; display: none; }
         #file-input { display: none; }
 
-        .action-btn {
-            width: 100%; padding: 20px; background-color: var(--main); color: #fff;
-            border: none; border-radius: var(--radius); font-size: 1.1rem;
-            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
+        /* Chips & Controls */
+        .controls-grid { display: none; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .control-label { font-size: 0.65rem; font-weight: 800; color: #bbb; text-transform: uppercase; margin-bottom: 8px; margin-left: 5px; }
+        .chip-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .chip {
+            padding: 10px 14px; border-radius: 12px; background: var(--input-bg); border: 2px solid var(--accent);
+            font-size: 0.75rem; font-weight: 800; color: #999; cursor: pointer; transition: 0.2s;
         }
-        .action-btn.show { display: block; }
-        .action-btn:active { transform: scale(0.98); }
-        .btn-active-invert { background: #eee !important; color: #333 !important; }
+        .chip.active { background: var(--main); color: #fff; border-color: var(--main); }
 
-        .save-guide { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; line-height: 1.4; font-weight: 600; }
+        .action-btn {
+            width: 100%; padding: 22px; background-color: var(--main); color: #fff;
+            border: none; border-radius: var(--radius); font-size: 1.1rem;
+            font-weight: 800; cursor: pointer; transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); }
+        .btn-success { background: var(--success) !important; color: #fff !important; }
 
         .footer-btns { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0 30px; }
         .kofi-btn, .home-btn {
@@ -97,10 +113,7 @@
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 3000;
         }
-        .modal-content {
-            background: #fff; width: 85%; max-width: 320px; padding: 30px;
-            border-radius: var(--radius); text-align: left; position: relative;
-        }
+        .modal-content { background: #fff; width: 85%; max-width: 320px; padding: 30px; border-radius: var(--radius); position: relative; }
         .close-icon { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; color: #aaa; cursor: pointer; font-weight: bold; }
     </style>
 </head>
@@ -112,7 +125,7 @@
         <a href="https://afrorakda.github.io/" class="hub-link">🏠 Hub</a>
     </header>
 
-    <p class="subtitle">Multi-line Watermark Inserter.</p>
+    <p class="subtitle">Quick Multi-line Watermarker.</p>
 
     <div class="input-wrapper">
         <textarea id="signature-input" placeholder="Your signature&#10;(Supports multi-line)"></textarea>
@@ -121,16 +134,38 @@
 
     <div class="interaction-box" id="interaction-box" onclick="document.getElementById('file-input').click()">
         <div id="drop-zone">
-            <div class="drop-text">Drop image or Tap to select</div>
+            <div class="drop-text">Drop image or Tap</div>
         </div>
         <canvas id="preview-canvas"></canvas>
     </div>
-    <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
+    <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg, image/webp">
 
-    <button class="action-btn" id="download-btn" onclick="downloadImage()">DOWNLOAD</button>
-    
-    <div class="save-guide">
-        Local process / Files app or Downloads folder
+    <div class="controls-grid" id="controls">
+        <div>
+            <div class="control-label">Position</div>
+            <div class="chip-row" id="pos-chips">
+                <div class="chip active" data-pos="br">Bottom-R</div>
+                <div class="chip" data-pos="bl">Bottom-L</div>
+                <div class="chip" data-pos="tr">Top-R</div>
+                <div class="chip" data-pos="tl">Top-L</div>
+            </div>
+        </div>
+        <div>
+            <div class="control-label">Color</div>
+            <div class="chip-row" id="color-chips">
+                <div class="chip active" data-color="#fff">White</div>
+                <div class="chip" data-color="#333">Black</div>
+            </div>
+        </div>
+        <div>
+            <div class="control-label">Format</div>
+            <div class="chip-row" id="fmt-chips">
+                <div class="chip active" data-fmt="image/jpeg">JPG</div>
+                <div class="chip" data-fmt="image/png">PNG</div>
+                <div class="chip" data-fmt="image/webp">WEBP</div>
+            </div>
+        </div>
+        <button class="action-btn" id="download-btn" onclick="downloadImage()">Download Marked Photo</button>
     </div>
 
     <div class="footer-btns">
@@ -148,8 +183,8 @@
 <div id="modal" class="modal">
     <div class="modal-content">
         <span class="close-icon" id="closeModal">&times;</span>
-        <h3 style="margin-top:0; font-weight:800">📱 Install</h3>
-        <p style="margin: 15px 0; color: #666; font-size: 0.9rem;">Add to your home screen.</p>
+        <h3 style="margin-top:0; font-weight:800; text-align:center">📱 Install</h3>
+        <p style="margin: 15px 0; color: #666; font-size: 0.9rem; text-align:center">Add to your home screen.</p>
         <div style="text-align: left; font-size: 0.9rem; line-height: 1.6;">
             <p>🍏 <b>iPhone (Safari):</b><br>Share > Add to Home Screen</p><br>
             <p>🤖 <b>Android (Chrome):</b><br>Menu (⋮) > Add to home screen</p>
@@ -158,121 +193,120 @@
 </div>
 
 <script>
-    const signatureInput = document.getElementById('signature-input');
+    const sigIn = document.getElementById('signature-input');
     const clrBtn = document.getElementById('clr-btn');
-    const interactionBox = document.getElementById('interaction-box');
-    const fileInput = document.getElementById('file-input');
-    const downloadBtn = document.getElementById('download-btn');
-    const previewCanvas = document.getElementById('preview-canvas');
-    const ctx = previewCanvas.getContext('2d');
+    const dropZone = document.getElementById('interaction-box');
+    const fileIn = document.getElementById('file-input');
+    const dlBtn = document.getElementById('download-btn');
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const controls = document.getElementById('controls');
 
-    let currentImage = null;
+    let currentImg = null;
+    let config = { pos: 'br', color: '#fff', fmt: 'image/jpeg' };
 
-    const saved = localStorage.getItem('markItSignature');
-    if (saved) {
-        signatureInput.value = saved;
-        clrBtn.style.display = 'flex';
+    // Init Signature
+    const savedSig = localStorage.getItem('markItSig');
+    if (savedSig) { sigIn.value = savedSig; clrBtn.style.display = 'flex'; }
+
+    // Event Listeners for Chips
+    function setupChips(id, key) {
+        document.getElementById(id).querySelectorAll('.chip').forEach(chip => {
+            chip.onclick = () => {
+                document.getElementById(id).querySelector('.active').classList.remove('active');
+                chip.classList.add('active');
+                config[key] = chip.dataset[key];
+                if(currentImg) processImage(currentImg);
+            };
+        });
     }
+    setupChips('pos-chips', 'pos');
+    setupChips('color-chips', 'color');
+    setupChips('fmt-chips', 'fmt');
 
-    signatureInput.addEventListener('input', () => {
-        const text = signatureInput.value;
-        localStorage.setItem('markItSignature', text);
-        clrBtn.style.display = text ? 'flex' : 'none';
-        if(currentImage) processImage(currentImage);
-    });
+    sigIn.oninput = () => {
+        localStorage.setItem('markItSig', sigIn.value);
+        clrBtn.style.display = sigIn.value ? 'flex' : 'none';
+        if(currentImg) processImage(currentImg);
+    };
 
-    clrBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        signatureInput.value = '';
-        localStorage.removeItem('markItSignature');
-        clrBtn.style.display = 'none';
-        if(currentImage) processImage(currentImage);
-    });
+    clrBtn.onclick = (e) => {
+        e.stopPropagation(); sigIn.value = ''; localStorage.removeItem('markItSig');
+        clrBtn.style.display = 'none'; if(currentImg) processImage(currentImg);
+    };
 
-    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.classList.add('dragover'); });
-    interactionBox.addEventListener('dragleave', () => { interactionBox.classList.remove('dragover'); });
-    interactionBox.addEventListener('drop', (e) => {
-        e.preventDefault();
-        interactionBox.classList.remove('dragover');
-        handleFile(e.dataTransfer.files[0]);
-    });
-
-    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); };
+    fileIn.onchange = (e) => handleFile(e.target.files[0]);
 
     function handleFile(file) {
         if (!file || !file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
-            img.onload = () => { currentImage = img; processImage(img); };
+            img.onload = () => { currentImg = img; processImage(img); };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
     function processImage(img) {
-        const text = signatureInput.value;
-        previewCanvas.width = img.width;
-        previewCanvas.height = img.height;
+        const text = sigIn.value;
+        canvas.width = img.width; canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        if (!text) {
-            updateUI();
-            return;
+        if (text) {
+            const fontSize = Math.max(24, Math.round(img.width / 25));
+            ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            
+            // Layout Logic
+            const isRight = config.pos.includes('r');
+            const isBottom = config.pos.includes('b');
+            ctx.textAlign = isRight ? 'right' : 'left';
+            ctx.textBaseline = isBottom ? 'bottom' : 'top';
+
+            const lines = isBottom ? text.split('\n').reverse() : text.split('\n');
+            const padding = fontSize;
+            const lineHeight = fontSize * 1.2;
+
+            ctx.shadowColor = config.color === '#fff' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+            ctx.shadowBlur = fontSize / 4;
+            ctx.fillStyle = config.color;
+
+            lines.forEach((line, i) => {
+                const x = isRight ? img.width - padding : padding;
+                const y = isBottom ? img.height - padding - (i * lineHeight) : padding + (i * lineHeight);
+                ctx.fillText(line, x, y);
+            });
+            ctx.shadowBlur = 0;
         }
 
-        const fontSize = Math.max(24, Math.round(img.width / 25));
-        ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-        ctx.textBaseline = 'bottom';
-        ctx.textAlign = 'right';
-
-        const lines = text.split('\n').reverse(); 
-        const padding = fontSize;
-        const lineHeight = fontSize * 1.2;
-
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-        ctx.shadowBlur = fontSize / 4;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
-
-        lines.forEach((line, index) => {
-            const y = img.height - padding - (index * lineHeight);
-            ctx.fillText(line, img.width - padding, y);
-        });
-
-        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-        updateUI();
-    }
-
-    function updateUI() {
         document.getElementById('drop-zone').style.display = 'none';
-        previewCanvas.style.display = 'block';
-        downloadBtn.classList.add('show');
+        canvas.style.display = 'block';
+        controls.style.display = 'flex';
     }
 
     function downloadImage() {
-        const dataUrl = previewCanvas.toDataURL('image/jpeg', 0.95);
+        const dataUrl = canvas.toDataURL(config.fmt, 0.95);
         const link = document.createElement('a');
-        link.download = `marked_${Date.now()}.jpg`;
+        const ext = config.fmt.split('/')[1];
+        link.download = `marked_${Date.now()}.${ext}`;
         link.href = dataUrl;
         link.click();
 
-        // 成功演出
-        const originalText = downloadBtn.textContent;
-        downloadBtn.textContent = "Saved!";
-        downloadBtn.classList.add('btn-active-invert');
+        const originalText = dlBtn.textContent;
+        dlBtn.textContent = "Saved!";
+        dlBtn.classList.add('btn-success');
         setTimeout(() => {
-            downloadBtn.textContent = originalText;
-            downloadBtn.classList.remove('btn-active-invert');
+            dlBtn.textContent = originalText;
+            dlBtn.classList.remove('btn-success');
         }, 1200);
     }
 
-    function showModal() { document.getElementById('modal').style.display = 'flex'; }
-    function hideModal() { document.getElementById('modal').style.display = 'none'; }
-    document.getElementById('homeBtn').onclick = showModal;
-    document.getElementById('closeModal').onclick = hideModal;
-    window.onclick = (e) => { if (e.target == document.getElementById('modal')) hideModal(); };
+    document.getElementById('homeBtn').onclick = () => document.getElementById('modal').style.display = 'flex';
+    document.getElementById('closeModal').onclick = () => document.getElementById('modal').style.display = 'none';
+    window.onclick = (e) => { if (e.target == document.getElementById('modal')) document.getElementById('modal').style.display = 'none'; };
 
     async function loadFooter() {
         try {
