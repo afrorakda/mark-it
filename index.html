@@ -22,7 +22,7 @@
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
             margin: 0; padding: 0;
-            user-select: none; /* 全体で長押し選択を禁止 */
+            user-select: none;
             -webkit-user-select: none;
         }
 
@@ -53,7 +53,7 @@
             background-color: var(--input-bg); font-size: 16px; font-weight: 700;
             color: var(--main) !important; outline: none; resize: none;
             -webkit-appearance: none; -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
-            user-select: text; /* テキスト入力のみ許可 */
+            user-select: text;
             -webkit-user-select: text;
         }
         textarea::placeholder { color: var(--ghost); -webkit-text-fill-color: var(--ghost); }
@@ -80,7 +80,6 @@
         #preview-canvas { max-width: 100%; height: auto; display: none; }
         #file-input { display: none; }
 
-        /* Chips & Controls */
         .controls-grid { display: none; flex-direction: column; gap: 15px; margin-bottom: 25px; }
         .control-label { font-size: 0.65rem; font-weight: 800; color: #bbb; text-transform: uppercase; margin-bottom: 8px; margin-left: 5px; }
         .chip-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
@@ -93,7 +92,7 @@
         .action-btn {
             width: 100%; padding: 22px; background-color: var(--main); color: #fff;
             border: none; border-radius: var(--radius); font-size: 1.1rem;
-            font-weight: 800; cursor: pointer; transition: 0.2s;
+            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
         }
         .action-btn:active { transform: scale(0.98); }
         .btn-success { background: var(--success) !important; color: #fff !important; }
@@ -287,21 +286,31 @@
         controls.style.display = 'flex';
     }
 
-    function downloadImage() {
+    async function downloadImage() {
+        if (!currentImg) return;
+        
+        // 成功演出
+        const originalText = dlBtn.textContent;
+        dlBtn.textContent = "Saved!";
+        dlBtn.classList.add('btn-success');
+        
+        // 非同期でBlobを生成
         const dataUrl = canvas.toDataURL(config.fmt, 0.95);
         const link = document.createElement('a');
         const ext = config.fmt.split('/')[1];
         link.download = `marked_${Date.now()}.${ext}`;
         link.href = dataUrl;
-        link.click();
-
-        const originalText = dlBtn.textContent;
-        dlBtn.textContent = "Saved!";
-        dlBtn.classList.add('btn-success');
+        
+        // メインスレッドを解放するためにsetTimeoutを使用
         setTimeout(() => {
-            dlBtn.textContent = originalText;
-            dlBtn.classList.remove('btn-success');
-        }, 1200);
+            link.click();
+            
+            // 演出を元に戻す
+            setTimeout(() => {
+                dlBtn.textContent = originalText;
+                dlBtn.classList.remove('btn-success');
+            }, 1000);
+        }, 10);
     }
 
     document.getElementById('homeBtn').onclick = () => document.getElementById('modal').style.display = 'flex';
@@ -321,4 +330,5 @@
 </script>
 
 </body>
-</html>
+</html>```
+
