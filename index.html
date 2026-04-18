@@ -53,8 +53,7 @@
             background-color: var(--input-bg); font-size: 16px; font-weight: 700;
             color: var(--main) !important; outline: none; resize: none;
             -webkit-appearance: none; -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
-            user-select: text;
-            -webkit-user-select: text;
+            user-select: text; -webkit-user-select: text;
         }
         textarea::placeholder { color: var(--ghost); -webkit-text-fill-color: var(--ghost); }
 
@@ -70,9 +69,7 @@
             border-radius: var(--radius); background-color: var(--input-bg);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; overflow: hidden; margin-bottom: 20px;
-            transition: background 0.3s;
         }
-        .interaction-box.dragover { background: #f0f0f0; border-color: var(--main); }
 
         #drop-zone { text-align: center; padding: 20px; }
         .drop-text { font-size: 14px; font-weight: 800; color: #bbb; }
@@ -164,7 +161,7 @@
                 <div class="chip" data-fmt="image/webp">WEBP</div>
             </div>
         </div>
-        <button class="action-btn" id="download-btn" onclick="downloadImage()">Download Marked Photo</button>
+        <button class="action-btn" id="download-btn" style="display:block" onclick="downloadImage()">Download Marked Photo</button>
     </div>
 
     <div class="footer-btns">
@@ -204,11 +201,9 @@
     let currentImg = null;
     let config = { pos: 'br', color: '#fff', fmt: 'image/jpeg' };
 
-    // Init Signature
     const savedSig = localStorage.getItem('markItSig');
     if (savedSig) { sigIn.value = savedSig; clrBtn.style.display = 'flex'; }
 
-    // Event Listeners for Chips
     function setupChips(id, key) {
         document.getElementById(id).querySelectorAll('.chip').forEach(chip => {
             chip.onclick = () => {
@@ -234,9 +229,9 @@
         clrBtn.style.display = 'none'; if(currentImg) processImage(currentImg);
     };
 
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
-    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
-    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); };
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#333'; };
+    dropZone.ondragleave = () => dropZone.style.borderColor = '#eee';
+    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.borderColor = '#eee'; handleFile(e.dataTransfer.files[0]); };
     fileIn.onchange = (e) => handleFile(e.target.files[0]);
 
     function handleFile(file) {
@@ -258,8 +253,6 @@
         if (text) {
             const fontSize = Math.max(24, Math.round(img.width / 25));
             ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-            
-            // Layout Logic
             const isRight = config.pos.includes('r');
             const isBottom = config.pos.includes('b');
             ctx.textAlign = isRight ? 'right' : 'left';
@@ -288,24 +281,18 @@
 
     async function downloadImage() {
         if (!currentImg) return;
-        
-        // 成功演出
         const originalText = dlBtn.textContent;
         dlBtn.textContent = "Saved!";
         dlBtn.classList.add('btn-success');
         
-        // 非同期でBlobを生成
         const dataUrl = canvas.toDataURL(config.fmt, 0.95);
         const link = document.createElement('a');
         const ext = config.fmt.split('/')[1];
         link.download = `marked_${Date.now()}.${ext}`;
         link.href = dataUrl;
         
-        // メインスレッドを解放するためにsetTimeoutを使用
         setTimeout(() => {
             link.click();
-            
-            // 演出を元に戻す
             setTimeout(() => {
                 dlBtn.textContent = originalText;
                 dlBtn.classList.remove('btn-success');
@@ -330,5 +317,4 @@
 </script>
 
 </body>
-</html>```
-
+</html>
