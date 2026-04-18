@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="apple-touch-icon" href="image_41.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-icon" href="image_41.png">
     <link rel="icon" href="image_41.png">
     <title>Mark It - Fridge Combo</title>
     <style>
@@ -12,159 +13,110 @@
             --main: #333;
             --accent: #eee;
             --input-bg: #fafafa;
-            --ghost: #aaa;
+            --ghost: #bbb;
             --radius: 15px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--main);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            background-color: var(--bg); color: var(--main);
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding: calc(env(safe-area-inset-top, 20px) + 10px) 20px env(safe-area-inset-bottom, 20px);
         }
 
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .fridge-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; flex-grow: 1; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; }
+
+        .hub-link {
+            text-decoration: none; font-size: 0.8rem; font-weight: 800; color: var(--main);
+            background: var(--accent); padding: 8px 12px; border-radius: 10px;
         }
 
-        header { text-align: center; }
-        h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -1px; }
-        .description { font-size: 13px; color: #666; margin-top: 5px; }
+        .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 20px; text-align: center; }
 
-        .input-wrapper {
-            width: 100%;
-            position: relative;
-        }
+        .input-wrapper { width: 100%; position: relative; margin-bottom: 15px; }
         textarea {
-            width: 100%;
-            height: 80px;
-            padding: 15px;
-            padding-right: 50px;
-            border: 2px solid var(--accent);
-            border-radius: var(--radius);
-            background-color: var(--input-bg);
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--main) !important;
-            outline: none;
-            resize: none;
-            -webkit-appearance: none;
-            -webkit-text-fill-color: var(--main) !important;
-            opacity: 1 !important;
+            width: 100%; height: 90px; padding: 15px; padding-right: 45px;
+            border: 2px solid var(--accent); border-radius: var(--radius);
+            background-color: var(--input-bg); font-size: 16px; font-weight: 700;
+            color: var(--main) !important; outline: none; resize: none;
+            -webkit-appearance: none; -webkit-text-fill-color: var(--main) !important; opacity: 1 !important;
         }
-        textarea::placeholder { color: #ccc; -webkit-text-fill-color: #ccc; }
+        textarea::placeholder { color: var(--ghost); -webkit-text-fill-color: var(--ghost); }
 
         .clr-btn {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            font-size: 11px;
-            font-weight: bold;
-            color: var(--ghost);
-            background: var(--accent);
-            border: none;
-            border-radius: 8px;
-            padding: 4px 8px;
-            cursor: pointer;
-            display: none;
+            position: absolute; right: 12px; top: 12px; width: 28px; height: 28px;
+            background: rgba(0,0,0,0.05); color: #ccc; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; display: none;
+            align-items: center; justify-content: center; z-index: 10;
         }
 
         .interaction-box {
-            width: 100%;
-            min-height: 220px;
-            border: 2px dashed var(--accent);
-            border-radius: var(--radius);
-            background-color: var(--input-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
+            width: 100%; min-height: 220px; border: 2px dashed var(--accent);
+            border-radius: var(--radius); background-color: var(--input-bg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; overflow: hidden; margin-bottom: 15px;
+            transition: background 0.3s;
         }
+        .interaction-box.dragover { background: #f0f0f0; border-color: var(--main); }
 
         #drop-zone { text-align: center; padding: 20px; }
-        .drop-text { font-size: 14px; font-weight: 700; color: #bbb; }
+        .drop-text { font-size: 14px; font-weight: 800; color: #bbb; }
 
         #preview-canvas { max-width: 100%; height: auto; display: none; }
         #file-input { display: none; }
 
         .action-btn {
-            width: 100%;
-            padding: 18px;
-            background-color: var(--main);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius);
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            display: none;
-            margin-top: 10px;
+            width: 100%; padding: 20px; background-color: var(--main); color: #fff;
+            border: none; border-radius: var(--radius); font-size: 1.1rem;
+            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
         }
         .action-btn.show { display: block; }
         .action-btn:active { transform: scale(0.98); }
+        .btn-active-invert { background: #eee !important; color: #333 !important; }
 
-        .save-guide { font-size: 11px; color: #999; text-align: center; margin-top: 5px; line-height: 1.4; }
+        .save-guide { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; line-height: 1.4; font-weight: 600; }
 
-        .footer-btns { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 30px; }
-        .kofi-btn {
-            display: inline-block; background: var(--main); color: #fff;
-            padding: 12px 25px; border-radius: var(--radius);
-            text-decoration: none; font-weight: bold; font-size: 14px;
+        .footer-btns { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0 30px; }
+        .kofi-btn, .home-btn {
+            width: 100%; max-width: 250px; padding: 14px; border-radius: var(--radius);
+            font-weight: 800; font-size: 0.9rem; text-decoration: none; text-align: center; border: none; cursor: pointer;
         }
-        .home-btn {
-            display: block; width: 60%; margin: 0 auto; background: var(--accent);
-            color: var(--main); border: none; padding: 10px;
-            border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
-        }
+        .kofi-btn { background: #fff; color: var(--main); border: 2px solid var(--main); }
+        .home-btn { background: var(--accent); color: var(--main); }
 
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 11px;
-            color: #aaa;
-            line-height: 1.8;
-        }
+        footer { font-size: 0.75rem; color: #bbb; text-align: center; padding-bottom: 20px; font-weight: 600; line-height: 1.6; }
+        footer a { color: inherit; text-decoration: underline; }
 
-        /* モーダルの表示制御を確実に修正 */
         .modal {
-            display: none; /* デフォルトで非表示 */
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); 
-            align-items: center; justify-content: center; 
-            z-index: 1000;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 3000;
         }
         .modal-content {
             background: #fff; width: 85%; max-width: 320px; padding: 30px;
             border-radius: var(--radius); text-align: left; position: relative;
         }
-        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
+        .close-icon { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; color: #aaa; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="fridge-container">
     <header>
         <h1>Mark It</h1>
-        <div class="description">One-tap Multi-line Watermark Inserter.</div>
+        <a href="https://afrorakda.github.io/" class="hub-link">🏠 Hub</a>
     </header>
+
+    <p class="subtitle">Multi-line Watermark Inserter.</p>
 
     <div class="input-wrapper">
         <textarea id="signature-input" placeholder="Your signature&#10;(Supports multi-line)"></textarea>
-        <button id="clr-btn" class="clr-btn">clr</button>
+        <button id="clr-btn" class="clr-btn">×</button>
     </div>
 
     <div class="interaction-box" id="interaction-box" onclick="document.getElementById('file-input').click()">
@@ -178,27 +130,30 @@
     <button class="action-btn" id="download-btn" onclick="downloadImage()">DOWNLOAD</button>
     
     <div class="save-guide">
-        *On iOS, downloads to "Files" app.<br>On Android/PC, saved to "Downloads" folder.
+        Local process / Files app or Downloads folder
     </div>
 
     <div class="footer-btns">
-        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕ buy me a coffee</a>
-        <button class="home-btn" onclick="showModal()">Add to Home Screen</button>
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
+        <button class="home-btn" id="homeBtn">Add to Home Screen</button>
     </div>
+
+    <footer id="dynamicFooter">
+        No login / No tracking / No ads / Browser only<br>
+        <a href="https://afrorakda.com/privacy/">Privacy Policy</a><br>
+        afrorakda © 2026
+    </footer>
 </div>
 
-<footer>
-    No login / No tracking / No ads / Browser only<br>
-    Privacy Policy / afrorakda © 2026
-</footer>
-
-<div id="modal" class="modal" onclick="hideModal()">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <span class="close-x" onclick="hideModal()">×</span>
-        <h3>📱 Install</h3>
-        <p>Add to your home screen.</p>
-        <p>🍏 <strong>iPhone (Safari):</strong><br>Tap Share, then Add to Home Screen.</p>
-        <p>🤖 <strong>Android (Chrome):</strong><br>Tap Menu (⋮), then Add to Home Screen.</p>
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close-icon" id="closeModal">&times;</span>
+        <h3 style="margin-top:0; font-weight:800">📱 Install</h3>
+        <p style="margin: 15px 0; color: #666; font-size: 0.9rem;">Add to your home screen.</p>
+        <div style="text-align: left; font-size: 0.9rem; line-height: 1.6;">
+            <p>🍏 <b>iPhone (Safari):</b><br>Share > Add to Home Screen</p><br>
+            <p>🤖 <b>Android (Chrome):</b><br>Menu (⋮) > Add to home screen</p>
+        </div>
     </div>
 </div>
 
@@ -216,13 +171,13 @@
     const saved = localStorage.getItem('markItSignature');
     if (saved) {
         signatureInput.value = saved;
-        clrBtn.style.display = 'block';
+        clrBtn.style.display = 'flex';
     }
 
     signatureInput.addEventListener('input', () => {
         const text = signatureInput.value;
         localStorage.setItem('markItSignature', text);
-        clrBtn.style.display = text ? 'block' : 'none';
+        clrBtn.style.display = text ? 'flex' : 'none';
         if(currentImage) processImage(currentImage);
     });
 
@@ -234,11 +189,11 @@
         if(currentImage) processImage(currentImage);
     });
 
-    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.style.borderColor = '#333'; });
-    interactionBox.addEventListener('dragleave', () => { interactionBox.style.borderColor = '#eee'; });
+    interactionBox.addEventListener('dragover', (e) => { e.preventDefault(); interactionBox.classList.add('dragover'); });
+    interactionBox.addEventListener('dragleave', () => { interactionBox.classList.remove('dragover'); });
     interactionBox.addEventListener('drop', (e) => {
         e.preventDefault();
-        interactionBox.style.borderColor = '#eee';
+        interactionBox.classList.remove('dragover');
         handleFile(e.dataTransfer.files[0]);
     });
 
@@ -275,7 +230,7 @@
         const padding = fontSize;
         const lineHeight = fontSize * 1.2;
 
-        ctx.shadowColor = 'rgba(0, 0, 0, 1.0)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
         ctx.shadowBlur = fontSize / 4;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
@@ -302,10 +257,33 @@
         link.download = `marked_${Date.now()}.jpg`;
         link.href = dataUrl;
         link.click();
+
+        // 成功演出
+        const originalText = downloadBtn.textContent;
+        downloadBtn.textContent = "Saved!";
+        downloadBtn.classList.add('btn-active-invert');
+        setTimeout(() => {
+            downloadBtn.textContent = originalText;
+            downloadBtn.classList.remove('btn-active-invert');
+        }, 1200);
     }
 
     function showModal() { document.getElementById('modal').style.display = 'flex'; }
     function hideModal() { document.getElementById('modal').style.display = 'none'; }
+    document.getElementById('homeBtn').onclick = showModal;
+    document.getElementById('closeModal').onclick = hideModal;
+    window.onclick = (e) => { if (e.target == document.getElementById('modal')) hideModal(); };
+
+    async function loadFooter() {
+        try {
+            const res = await fetch('footer.json');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.footerHtml) document.getElementById('dynamicFooter').innerHTML = data.footerHtml;
+            }
+        } catch(e) {}
+    }
+    window.onload = loadFooter;
 </script>
 
 </body>
