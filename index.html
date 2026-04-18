@@ -89,7 +89,7 @@
         .action-btn {
             width: 100%; padding: 22px; background-color: var(--main); color: #fff;
             border: none; border-radius: var(--radius); font-size: 1.1rem;
-            font-weight: 800; cursor: pointer; transition: 0.2s;
+            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
         }
         .action-btn:active { transform: scale(0.98); }
         .btn-success { background: var(--success) !important; color: #fff !important; }
@@ -200,7 +200,7 @@
 
     let currentImg = null;
     let config = { pos: 'br', color: '#fff', fmt: 'image/jpeg' };
-    let cachedBlobUrl = null; // 先読みキャッシュ
+    let cachedBlobUrl = null;
 
     const savedSig = localStorage.getItem('markItSig');
     if (savedSig) { sigIn.value = savedSig; clrBtn.style.display = 'flex'; }
@@ -241,22 +241,37 @@
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => { 
-                currentImg = img; 
-                document.getElementById('drop-zone').style.display = 'none';
-                canvas.style.display = 'block';
-                controls.style.display = 'flex';
-                updateAll(); 
+                // 安全装置: クラッシュ防止のダウンサンプリング (MAX 4000px)
+                const MAX_SIDE = 4000;
+                let w = img.width, h = img.height;
+                if (w > MAX_SIDE || h > MAX_SIDE) {
+                    if (w > h) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
+                    else { w = Math.round(w * (MAX_SIDE / h)); h = MAX_SIDE; }
+                    const offCanvas = document.createElement('canvas');
+                    offCanvas.width = w; offCanvas.height = h;
+                    offCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const safeImg = new Image();
+                    safeImg.onload = () => { currentImg = safeImg; finishLoad(); };
+                    safeImg.src = offCanvas.toDataURL('image/jpeg', 0.95);
+                } else {
+                    currentImg = img; finishLoad();
+                }
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // プレビュー描画とキャッシュ生成
+    function finishLoad() {
+        document.getElementById('drop-zone').style.display = 'none';
+        canvas.style.display = 'block';
+        controls.style.display = 'flex';
+        updateAll(); 
+    }
+
     function updateAll() {
         if (!currentImg) return;
         
-        // 1. プレビュー描画
         const text = sigIn.value;
         canvas.width = currentImg.width; canvas.height = currentImg.height;
         ctx.drawImage(currentImg, 0, 0);
@@ -275,6 +290,7 @@
 
             ctx.shadowColor = config.color === '#fff' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
             ctx.shadowBlur = fontSize / 4;
+            ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             ctx.fillStyle = config.color;
 
             lines.forEach((line, i) => {
@@ -282,25 +298,24 @@
                 const y = isBottom ? currentImg.height - padding - (i * lineHeight) : padding + (i * lineHeight);
                 ctx.fillText(line, x, y);
             });
-            ctx.shadowBlur = 0;
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
         }
 
-        // 2. 「先読み」キャッシュ生成（バックグラウンド処理）
-        if (cachedBlobUrl) URL.revokeObjectURL(cachedBlobUrl);
+        // 徹底清掃ロジック: 古いキャッシュを即時破棄
+        if (cachedBlobUrl) { URL.revokeObjectURL(cachedBlobUrl); cachedBlobUrl = null; }
+        
+        // 先読みキャッシュ生成
         canvas.toBlob((blob) => {
-            cachedBlobUrl = URL.createObjectURL(blob);
+            if (blob) cachedBlobUrl = URL.createObjectURL(blob);
         }, config.fmt, 0.95);
     }
 
     function saveImage() {
         if (!cachedBlobUrl) return;
-
-        // 即時フィードバック
         const originalText = dlBtn.textContent;
         dlBtn.textContent = "Saved!";
         dlBtn.classList.add('btn-success');
 
-        // キャッシュされたURLで即ダウンロード
         const link = document.createElement('a');
         const ext = config.fmt.split('/')[1];
         link.download = `marked_${Date.now()}.${ext}`;
