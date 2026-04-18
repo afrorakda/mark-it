@@ -74,7 +74,7 @@
         #drop-zone { text-align: center; padding: 20px; }
         .drop-text { font-size: 14px; font-weight: 800; color: #bbb; }
 
-        #preview-canvas { max-width: 100%; height: auto; display: none; }
+        #preview-canvas { max-width: 100%; height: auto; display: none; border-radius: 10px; }
         #file-input { display: none; }
 
         .controls-grid { display: none; flex-direction: column; gap: 15px; margin-bottom: 25px; }
@@ -89,7 +89,7 @@
         .action-btn {
             width: 100%; padding: 22px; background-color: var(--main); color: #fff;
             border: none; border-radius: var(--radius); font-size: 1.1rem;
-            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
+            font-weight: 800; cursor: pointer; transition: 0.2s;
         }
         .action-btn:active { transform: scale(0.98); }
         .btn-success { background: var(--success) !important; color: #fff !important; }
@@ -161,7 +161,7 @@
                 <div class="chip" data-fmt="image/webp">WEBP</div>
             </div>
         </div>
-        <button class="action-btn" id="download-btn" style="display:block" onclick="downloadImage()">Download Marked Photo</button>
+        <button class="action-btn" id="download-btn" onclick="saveImage()">Save Image</button>
     </div>
 
     <div class="footer-btns">
@@ -200,6 +200,7 @@
 
     let currentImg = null;
     let config = { pos: 'br', color: '#fff', fmt: 'image/jpeg' };
+    let cachedBlobUrl = null; // 先読みキャッシュ
 
     const savedSig = localStorage.getItem('markItSig');
     if (savedSig) { sigIn.value = savedSig; clrBtn.style.display = 'flex'; }
@@ -210,7 +211,7 @@
                 document.getElementById(id).querySelector('.active').classList.remove('active');
                 chip.classList.add('active');
                 config[key] = chip.dataset[key];
-                if(currentImg) processImage(currentImg);
+                updateAll();
             };
         });
     }
@@ -221,12 +222,12 @@
     sigIn.oninput = () => {
         localStorage.setItem('markItSig', sigIn.value);
         clrBtn.style.display = sigIn.value ? 'flex' : 'none';
-        if(currentImg) processImage(currentImg);
+        updateAll();
     };
 
     clrBtn.onclick = (e) => {
         e.stopPropagation(); sigIn.value = ''; localStorage.removeItem('markItSig');
-        clrBtn.style.display = 'none'; if(currentImg) processImage(currentImg);
+        clrBtn.style.display = 'none'; updateAll();
     };
 
     dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#333'; };
@@ -239,19 +240,29 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
-            img.onload = () => { currentImg = img; processImage(img); };
+            img.onload = () => { 
+                currentImg = img; 
+                document.getElementById('drop-zone').style.display = 'none';
+                canvas.style.display = 'block';
+                controls.style.display = 'flex';
+                updateAll(); 
+            };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    function processImage(img) {
+    // プレビュー描画とキャッシュ生成
+    function updateAll() {
+        if (!currentImg) return;
+        
+        // 1. プレビュー描画
         const text = sigIn.value;
-        canvas.width = img.width; canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+        canvas.width = currentImg.width; canvas.height = currentImg.height;
+        ctx.drawImage(currentImg, 0, 0);
 
         if (text) {
-            const fontSize = Math.max(24, Math.round(img.width / 25));
+            const fontSize = Math.max(24, Math.round(currentImg.width / 25));
             ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
             const isRight = config.pos.includes('r');
             const isBottom = config.pos.includes('b');
@@ -267,37 +278,39 @@
             ctx.fillStyle = config.color;
 
             lines.forEach((line, i) => {
-                const x = isRight ? img.width - padding : padding;
-                const y = isBottom ? img.height - padding - (i * lineHeight) : padding + (i * lineHeight);
+                const x = isRight ? currentImg.width - padding : padding;
+                const y = isBottom ? currentImg.height - padding - (i * lineHeight) : padding + (i * lineHeight);
                 ctx.fillText(line, x, y);
             });
             ctx.shadowBlur = 0;
         }
 
-        document.getElementById('drop-zone').style.display = 'none';
-        canvas.style.display = 'block';
-        controls.style.display = 'flex';
+        // 2. 「先読み」キャッシュ生成（バックグラウンド処理）
+        if (cachedBlobUrl) URL.revokeObjectURL(cachedBlobUrl);
+        canvas.toBlob((blob) => {
+            cachedBlobUrl = URL.createObjectURL(blob);
+        }, config.fmt, 0.95);
     }
 
-    async function downloadImage() {
-        if (!currentImg) return;
+    function saveImage() {
+        if (!cachedBlobUrl) return;
+
+        // 即時フィードバック
         const originalText = dlBtn.textContent;
         dlBtn.textContent = "Saved!";
         dlBtn.classList.add('btn-success');
-        
-        const dataUrl = canvas.toDataURL(config.fmt, 0.95);
+
+        // キャッシュされたURLで即ダウンロード
         const link = document.createElement('a');
         const ext = config.fmt.split('/')[1];
         link.download = `marked_${Date.now()}.${ext}`;
-        link.href = dataUrl;
-        
+        link.href = cachedBlobUrl;
+        link.click();
+
         setTimeout(() => {
-            link.click();
-            setTimeout(() => {
-                dlBtn.textContent = originalText;
-                dlBtn.classList.remove('btn-success');
-            }, 1000);
-        }, 10);
+            dlBtn.textContent = originalText;
+            dlBtn.classList.remove('btn-success');
+        }, 1200);
     }
 
     document.getElementById('homeBtn').onclick = () => document.getElementById('modal').style.display = 'flex';
