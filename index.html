@@ -69,7 +69,9 @@
             border-radius: var(--radius); background-color: var(--input-bg);
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; overflow: hidden; margin-bottom: 20px;
+            transition: background-color 0.4s ease;
         }
+        .flash { background-color: #d0d0d0 !important; }
 
         #drop-zone { text-align: center; padding: 20px; }
         .drop-text { font-size: 14px; font-weight: 800; color: #bbb; }
@@ -89,7 +91,7 @@
         .action-btn {
             width: 100%; padding: 22px; background-color: var(--main); color: #fff;
             border: none; border-radius: var(--radius); font-size: 1.1rem;
-            font-weight: 800; cursor: pointer; display: none; transition: 0.2s;
+            font-weight: 800; cursor: pointer; transition: 0.2s;
             -webkit-appearance: none; -webkit-text-fill-color: #fff;
         }
         .action-btn:active { transform: scale(0.98); }
@@ -168,7 +170,7 @@
                 <div class="chip" data-fmt="image/webp">WEBP</div>
             </div>
         </div>
-        <button class="action-btn" id="download-btn" onclick="saveImage()">Save Image</button>
+        <button class="action-btn" id="download-btn" onclick="saveImage()" style="display:block">Save Image</button>
     </div>
 
     <footer>
@@ -195,7 +197,7 @@
 <script>
     const sigIn = document.getElementById('signature-input');
     const clrBtn = document.getElementById('clr-btn');
-    const dropZone = document.getElementById('interaction-box');
+    const interactionBox = document.getElementById('interaction-box');
     const fileIn = document.getElementById('file-input');
     const dlBtn = document.getElementById('download-btn');
     const canvas = document.getElementById('preview-canvas');
@@ -234,9 +236,9 @@
         clrBtn.style.display = 'none'; updateAll();
     };
 
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#333'; };
-    dropZone.ondragleave = () => dropZone.style.borderColor = '#eee';
-    dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.borderColor = '#eee'; handleFile(e.dataTransfer.files[0]); };
+    interactionBox.ondragover = (e) => { e.preventDefault(); interactionBox.style.borderColor = '#333'; };
+    interactionBox.ondragleave = () => interactionBox.style.borderColor = '#eee';
+    interactionBox.ondrop = (e) => { e.preventDefault(); interactionBox.style.borderColor = '#eee'; handleFile(e.dataTransfer.files[0]); };
     fileIn.onchange = (e) => handleFile(e.target.files[0]);
 
     function handleFile(file) {
@@ -315,6 +317,10 @@
         const originalText = dlBtn.textContent;
         dlBtn.textContent = "Saved!";
         dlBtn.classList.add('btn-success');
+        
+        // フィードバックフラッシュ
+        interactionBox.classList.add('flash');
+        setTimeout(() => interactionBox.classList.remove('flash'), 400);
 
         const link = document.createElement('a');
         const ext = config.fmt.split('/')[1];
